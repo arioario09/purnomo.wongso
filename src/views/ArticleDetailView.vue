@@ -53,9 +53,18 @@
       <!-- Sidebar -->
       <div class="col-lg-4">
         <!-- Back button -->
-        <button class="btn btn-default btn-sm w-100 mb-3" @click="$router.push('/articles')">
+        <button class="btn btn-default btn-sm w-100 mb-2" @click="$router.push('/articles')">
           <i class="fa-solid fa-arrow-left"></i> Kembali ke Artikel
         </button>
+
+        <!-- Edit button -->
+        <router-link
+          v-if="canEdit"
+          :to="{ name: 'article-edit', params: { id: article.id } }"
+          class="btn btn-primary btn-sm w-100 mb-3"
+        >
+          <i class="fa-solid fa-pen-to-square"></i> Edit Artikel
+        </router-link>
 
         <!-- About Author -->
         <div class="gh-box mb-3">
@@ -125,6 +134,10 @@ import { store } from '../store.js';
 
 const route = useRoute();
 const article = computed(() => store.articles.find(a => String(a.id) === String(route.params.id)));
+const canEdit = computed(() => {
+  if (!store.isLoggedIn || !article.value) return false;
+  return !article.value.authorEmail || article.value.authorEmail === store.currentUser?.email;
+});
 const author = computed(() => article.value?.author || {
   name: 'Purnomo Wongso',
   username: 'purnomo.wongso',

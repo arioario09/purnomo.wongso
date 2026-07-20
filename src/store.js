@@ -100,6 +100,26 @@ export const store = reactive({
     }
   },
 
+  async updateArticle(id, data) {
+    if (!db) return;
+    const articleRef = doc(db, "articles", id);
+    await setDoc(articleRef, { ...data, updatedAt: serverTimestamp() }, { merge: true });
+    const idx = this.articles.findIndex((a) => a.id === id);
+    if (idx !== -1) {
+      this.articles[idx] = { ...this.articles[idx], ...data };
+    }
+  },
+
+  async updateBook(id, data) {
+    if (!db || !this.isLoggedIn) return;
+    const bookRef = doc(db, "books", id);
+    await setDoc(bookRef, { ...data, updatedAt: serverTimestamp() }, { merge: true });
+    const idx = this.books.findIndex((b) => b.id === id);
+    if (idx !== -1) {
+      this.books[idx] = { ...this.books[idx], ...data };
+    }
+  },
+
   // ── Site Settings ──────────────────────────────────────────
   siteSettings: {
     heroEyebrow: "Catatan, pembelajaran, dan inspirasi",

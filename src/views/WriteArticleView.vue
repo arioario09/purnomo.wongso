@@ -22,7 +22,7 @@
               style="font-size: 10px; color: var(--color-fg-subtle)"
             ></i>
             <span style="font-size: 13px; color: var(--color-fg-muted)"
-              >Artikel Baru</span
+              >{{ isEditing ? "Edit Artikel" : "Artikel Baru" }}</span
             >
           </div>
           <h1
@@ -36,7 +36,7 @@
               class="fa-solid fa-pen-to-square me-2"
               style="color: var(--color-fg-muted)"
             ></i
-            >Tulis Artikel Baru
+            >{{ isEditing ? "Edit Artikel" : "Tulis Artikel Baru" }}
           </h1>
           <p
             style="
@@ -45,7 +45,7 @@
               margin-top: 4px;
             "
           >
-            Bagikan pengetahuan dan ide brilian Anda kepada dunia.
+            {{ isEditing ? "Perbarui konten artikel Anda." : "Bagikan pengetahuan dan ide brilian Anda kepada dunia." }}
           </p>
         </div>
 
@@ -185,7 +185,7 @@
                           : 'fa-solid fa-paper-plane'
                       "
                     ></i>
-                    {{ saving ? "Menyimpan..." : "Publikasikan" }}
+                    {{ saving ? "Menyimpan..." : isEditing ? "Simpan Perubahan" : "Publikasikan" }}
                   </button>
                 </div>
               </div>
@@ -338,11 +338,15 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { ref, onMounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { store } from "../store.js";
 
 const router = useRouter();
+const route = useRoute();
+
+const articleId = route.params.id;
+const isEditing = Boolean(articleId);
 
 const newArticle = ref({ title: "", category: "", image: "", content: "" });
 const showSuccessMsg = ref(false);
@@ -354,6 +358,24 @@ const resetForm = () => {
   newArticle.value = { title: "", category: "", image: "", content: "" };
   uploadError.value = "";
 };
+
+onMounted(() => {
+  if (isEditing) {
+    const article = store.articles.find((a) => String(a.id) === String(articleId));
+    if (article) {
+      const contentText = article.content
+        .replace(/<\/p><p>/g, "\n\n")
+        .replace(/<br>/g, "\n")
+        .replace(/<\/?p>/g, "");
+      newArticle.value = {
+        title: article.title || "",
+        category: article.category || "",
+        image: article.image || "",
+        content: contentText,
+      };
+    }
+  }
+});
 
 const uploadArticleImage = async (event) => {
   const file = event.target.files?.[0];
@@ -408,7 +430,7 @@ const submitArticle = async () => {
   ];
 
   try {
-    await store.addArticle({
+    const articleData = {
       title: newArticle.value.title,
       category: newArticle.value.category,
       date: new Date().toLocaleDateString("id-ID", {
@@ -429,7 +451,14 @@ const submitArticle = async () => {
         avatar: store.currentUser?.photo || store.userProfile.avatar,
         bio: store.userProfile.bio,
       },
-    });
+      authorEmail: store.currentUser?.email,
+    };
+
+    if (isEditing) {
+      await store.updateArticle(articleId, articleData);
+    } else {
+      await store.addArticle(articleData);
+    }
 
     showSuccessMsg.value = true;
     setTimeout(() => {

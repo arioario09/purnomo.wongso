@@ -44,19 +44,28 @@
               <i class="fa-solid fa-user-pen"></i> {{ book.author }}
             </div>
             <p>{{ book.description }}</p>
-            <a
-              v-if="book.fileUrl"
-              :href="book.fileUrl"
-              target="_blank"
-              rel="noreferrer"
-              class="btn btn-default btn-sm"
-            >
-              <i class="fa-solid fa-file-pdf"></i> Buka {{ book.fileName }}
-            </a>
-            <span v-else class="book-file"
-              ><i class="fa-regular fa-file-lines"></i> Belum ada file
-              buku</span
-            >
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:auto;">
+              <a
+                v-if="book.fileUrl"
+                :href="book.fileUrl"
+                target="_blank"
+                rel="noreferrer"
+                class="btn btn-default btn-sm"
+              >
+                <i class="fa-solid fa-file-pdf"></i> Buka {{ book.fileName }}
+              </a>
+              <span v-else class="book-file"
+                ><i class="fa-regular fa-file-lines"></i> Belum ada file
+                buku</span
+              >
+              <button
+                v-if="canEditBook(book)"
+                class="btn btn-invisible btn-sm"
+                @click="openEditBookForm(book)"
+              >
+                <i class="fa-solid fa-pen"></i>
+              </button>
+            </div>
           </div>
         </article>
       </div>
@@ -70,7 +79,7 @@
     <div v-if="showForm" class="book-modal" @click.self="closeForm">
       <form class="book-form gh-box" @submit.prevent="addBook">
         <div class="gh-box-header">
-          <span>Tambah Buku</span
+          <span>{{ isEditing ? "Edit Buku" : "Tambah Buku" }}</span
           ><button
             type="button"
             class="close-button"
@@ -137,7 +146,7 @@
             type="submit"
             :disabled="!store.isLoggedIn"
           >
-            <i class="fa-solid fa-upload"></i> Simpan Buku
+            <i class="fa-solid fa-upload"></i> {{ isEditing ? "Simpan Perubahan" : "Simpan Buku" }}
           </button>
         </div>
       </form>
@@ -146,18 +155,22 @@
 </template>
 
 <script setup>
-import { reactive, ref } from "vue";
+import { reactive, ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { store } from "../store.js";
 
 const router = useRouter();
 const showForm = ref(false);
+const editingBook = ref(null);
+const isEditing = computed(() => editingBook.value !== null);
+
 const book = reactive({
   title: "",
   author: "",
   description: "",
   cover: "",
   fileUrl: "",
+  fileName: "",
 });
 const resetBook = () =>
   Object.assign(book, {
@@ -166,9 +179,11 @@ const resetBook = () =>
     description: "",
     cover: "",
     fileUrl: "",
+    fileName: "",
   });
 const closeForm = () => {
   showForm.value = false;
+  editingBook.value = null;
   resetBook();
 };
 const openAddBookForm = () => {
@@ -176,6 +191,26 @@ const openAddBookForm = () => {
     router.push({ name: "login", query: { redirect: "/modules" } });
     return;
   }
+  editingBook.value = null;
+  resetBook();
+  showForm.value = true;
+};
+
+const canEditBook = (b) => {
+  if (!store.isLoggedIn) return false;
+  return !b.authorEmail || b.authorEmail === store.currentUser?.email;
+};
+
+const openEditBookForm = (b) => {
+  editingBook.value = b;
+  Object.assign(book, {
+    title: b.title || "",
+    author: b.author || "",
+    description: b.description || "",
+    cover: b.cover || "",
+    fileUrl: b.fileUrl || "",
+    fileName: b.fileName || "",
+  });
   showForm.value = true;
 };
 
@@ -226,8 +261,14 @@ const addBook = async () => {
       fileName: book.title || "Buku",
     };
 
-    await store.addBook(payload);
+    if (isEditing.value && editingBook.value) {
+      await store.updateBook(editingBook.value.id, payload);
+    } else {
+      payload.authorEmail = store.currentUser?.email;
+      await store.addBook(payload);
+    }
     showForm.value = false;
+    editingBook.value = null;
     resetBook();
   } catch (error) {
     console.error(error);
