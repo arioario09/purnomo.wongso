@@ -117,6 +117,12 @@
                     accept="image/png,image/jpeg,image/webp"
                     @change="uploadArticleImage"
                   />
+                  <div v-if="newArticle.image" style="margin-top:8px;">
+                    <img :src="newArticle.image" alt="Preview" style="width:100%; max-height:120px; object-fit:cover; border-radius:6px; border:1px solid var(--color-border-muted);" />
+                  </div>
+                  <div v-if="uploadError" style="margin-top:8px; font-size:12px; color:var(--color-danger-fg);">
+                    <i class="fa-solid fa-circle-exclamation"></i> {{ uploadError }}
+                  </div>
                   <div class="form-text">
                     <i class="fa-solid fa-circle-info"></i> Gambar akan diunggah
                     ke ImgBB.
@@ -342,14 +348,22 @@ const newArticle = ref({ title: "", category: "", image: "", content: "" });
 const showSuccessMsg = ref(false);
 const saving = ref(false);
 const errorMsg = ref("");
+const uploadError = ref("");
 
 const resetForm = () => {
   newArticle.value = { title: "", category: "", image: "", content: "" };
+  uploadError.value = "";
 };
 
 const uploadArticleImage = async (event) => {
   const file = event.target.files?.[0];
   if (!file) return;
+  uploadError.value = "";
+
+  if (!import.meta.env.VITE_IMGBB_API_KEY) {
+    uploadError.value = "API key ImgBB belum dikonfigurasi. Set VITE_IMGBB_API_KEY.";
+    return;
+  }
 
   const formData = new FormData();
   formData.append("image", file);
@@ -364,15 +378,15 @@ const uploadArticleImage = async (event) => {
     );
 
     const data = await response.json();
-    if (data?.data?.url) {
-      newArticle.value.image = data.data.url;
-      errorMsg.value = "";
+    const imgUrl = data?.data?.image?.url || data?.data?.url;
+    if (imgUrl) {
+      newArticle.value.image = imgUrl;
     } else {
       throw new Error("Gagal mengunggah gambar artikel.");
     }
   } catch (error) {
     console.error(error);
-    errorMsg.value = "Gagal mengunggah gambar artikel.";
+    uploadError.value = "Gagal mengunggah gambar. Periksa API key ImgBB.";
   }
 };
 

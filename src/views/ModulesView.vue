@@ -183,6 +183,11 @@ const uploadCover = async (event) => {
   const file = event.target.files?.[0];
   if (!file) return;
 
+  if (!import.meta.env.VITE_IMGBB_API_KEY) {
+    alert("API key ImgBB belum dikonfigurasi. Set VITE_IMGBB_API_KEY.");
+    return;
+  }
+
   const formData = new FormData();
   formData.append("image", file);
 
@@ -196,8 +201,9 @@ const uploadCover = async (event) => {
     );
 
     const data = await response.json();
-    if (data?.data?.url) {
-      book.cover = data.data.url;
+    const imgUrl = data?.data?.image?.url || data?.data?.url;
+    if (imgUrl) {
+      book.cover = imgUrl;
       book.fileName = book.title || "Buku";
     } else {
       throw new Error("Gagal mengunggah sampul gambar.");
