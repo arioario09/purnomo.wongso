@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
 import { authReady, store } from '../store.js';
+import { isEmailAllowed } from '../firebase.js';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -44,6 +45,12 @@ const router = createRouter({
       component: () => import('../views/ProfileView.vue'),
       meta: { requiresAuth: true }
     },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: () => import('../views/AdminView.vue'),
+      meta: { requiresAdmin: true }
+    },
   ],
   scrollBehavior(to, from, savedPosition) {
     if (savedPosition) return savedPosition;
@@ -57,6 +64,8 @@ router.beforeEach(async (to, from, next) => {
   if (to.meta.requiresAuth && !store.isLoggedIn) {
     next({ name: 'login', query: { redirect: to.fullPath } });
   } else if (to.meta.guestOnly && store.isLoggedIn) {
+    next({ name: 'home' });
+  } else if (to.meta.requiresAdmin && (!store.isLoggedIn || !isEmailAllowed(store.currentUser?.email))) {
     next({ name: 'home' });
   } else {
     next();

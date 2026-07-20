@@ -2,9 +2,9 @@
   <div class="books-page">
     <header class="books-header">
       <div>
-        <h1><i class="fa-solid fa-books me-2"></i>Koleksi Buku</h1>
+        <h1><i class="fa-solid fa-books me-2"></i>{{ store.siteSettings.booksTitle }}</h1>
         <p>
-          Simpan dan bagikan buku digital yang dapat dibaca dari satu tempat.
+          {{ store.siteSettings.booksDescription }}
         </p>
       </div>
       <div class="books-header-actions">

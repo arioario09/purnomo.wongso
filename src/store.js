@@ -2,12 +2,14 @@ import { reactive } from "vue";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
   collection,
+  deleteDoc,
   doc,
+  getDoc,
   onSnapshot,
   serverTimestamp,
   setDoc,
 } from "firebase/firestore";
-import { auth, db, firebaseIsConfigured } from "./firebase.js";
+import { auth, db, firebaseIsConfigured, isEmailAllowed } from "./firebase.js";
 
 export const store = reactive({
   // ── Auth State ──────────────────────────────────────────
@@ -97,6 +99,77 @@ export const store = reactive({
       await setDoc(bookRef, { ...persistedBook, createdAt: serverTimestamp() });
     }
   },
+
+  // ── Site Settings ──────────────────────────────────────────
+  siteSettings: {
+    heroEyebrow: "Catatan, pembelajaran, dan inspirasi",
+    heroName: "Purnomo Wongso",
+    heroBio: "Ruang untuk berbagi wawasan seputar akuntansi, teknologi, bisnis, dan pengembangan diri. Temukan ide yang dapat dipelajari dan diterapkan dalam pekerjaan sehari-hari.",
+    heroTopics: ["Artikel pilihan", "Materi belajar", "Wawasan praktis"],
+    featuredTitle: "Artikel Unggulan",
+    navigationTitle: "Navigasi Cepat",
+    articlesTitle: "Artikel",
+    articlesDescription: "Jelajahi tulisan-tulisan seputar akuntansi, teknologi, dan bisnis.",
+    booksTitle: "Koleksi Buku",
+    booksDescription: "Simpan dan bagikan buku digital yang dapat dibaca dari satu tempat.",
+  },
+
+  siteTheme: {},
+
+  async loadSiteSettings() {
+    if (!db) return;
+    const snap = await getDoc(doc(db, "siteSettings", "data"));
+    if (snap.exists()) {
+      Object.assign(this.siteSettings, snap.data());
+    }
+    const themeSnap = await getDoc(doc(db, "siteTheme", "data"));
+    if (themeSnap.exists()) {
+      this.siteTheme = { ...themeSnap.data() };
+      this.applyTheme();
+    }
+  },
+
+  async saveSiteSettings(data) {
+    Object.assign(this.siteSettings, data);
+    if (db) {
+      await setDoc(doc(db, "siteSettings", "data"), { ...data }, { merge: true });
+    }
+  },
+
+  async saveSiteTheme(data) {
+    this.siteTheme = { ...data };
+    this.applyTheme();
+    if (db) {
+      await setDoc(doc(db, "siteTheme", "data"), { ...data }, { merge: true });
+    }
+  },
+
+  applyTheme() {
+    const root = document.documentElement;
+    for (const [key, val] of Object.entries(this.siteTheme)) {
+      if (val) root.style.setProperty(`--${key}`, val);
+    }
+  },
+
+  async deleteArticle(articleId) {
+    if (!db) return false;
+    try {
+      await deleteDoc(doc(db, "articles", articleId));
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  async deleteBook(bookId) {
+    if (!db) return false;
+    try {
+      await deleteDoc(doc(db, "books", bookId));
+      return true;
+    } catch {
+      return false;
+    }
+  },
 });
 
 export const authReady = new Promise((resolve) => {
@@ -106,7 +179,7 @@ export const authReady = new Promise((resolve) => {
   }
 
   onAuthStateChanged(auth, (user) => {
-    if (user) {
+    if (user && isEmailAllowed(user.email)) {
       store.login({
         uid: user.uid,
         name: user.displayName || user.email?.split("@")[0] || "Pengguna",
@@ -115,10 +188,14 @@ export const authReady = new Promise((resolve) => {
         provider: user.providerData[0]?.providerId || "email",
       });
     } else {
+      if (user && !isEmailAllowed(user.email)) {
+        signOut(auth);
+      }
       store.isLoggedIn = false;
       store.currentUser = null;
     }
     resolve();
+    store.loadSiteSettings();
   });
 });
 

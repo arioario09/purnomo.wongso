@@ -49,5 +49,16 @@ export const db = app ? getFirestore(app) : null;
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: "select_account" });
 
+const allowedEmails = (import.meta.env.VITE_ALLOWED_EMAILS || "")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
+export function isEmailAllowed(email) {
+  if (!email) return false;
+  if (allowedEmails.length === 0) return true;
+  return allowedEmails.includes(email.toLowerCase());
+}
+
 export const firebaseSetupError =
   "Firebase belum dikonfigurasi. Salin .env.example menjadi .env.local lalu isi konfigurasi proyek Firebase Anda.";

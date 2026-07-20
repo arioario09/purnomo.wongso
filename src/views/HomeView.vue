@@ -6,14 +6,14 @@
         <div class="home-hero-content">
           <!-- <div class="home-brand-mark" aria-hidden="true"><i class="fa-solid fa-code"></i></div> -->
           <div>
-            <div class="home-hero-eyebrow">Catatan, pembelajaran, dan inspirasi</div>
-            <h1 class="gh-hero-name">Purnomo Wongso</h1>
-            <p class="gh-hero-bio">Ruang untuk berbagi wawasan seputar akuntansi, teknologi, bisnis, dan pengembangan diri. Temukan ide yang dapat dipelajari dan diterapkan dalam pekerjaan sehari-hari.</p>
+            <div class="home-hero-eyebrow">{{ store.siteSettings.heroEyebrow }}</div>
+            <h1 class="gh-hero-name">{{ store.siteSettings.heroName }}</h1>
+            <p class="gh-hero-bio">{{ store.siteSettings.heroBio }}</p>
 
             <div class="home-hero-topics">
-              <span><i class="fa-solid fa-newspaper"></i> Artikel pilihan</span>
-              <span><i class="fa-solid fa-graduation-cap"></i> Materi belajar</span>
-              <span><i class="fa-solid fa-lightbulb"></i> Wawasan praktis</span>
+              <span v-for="topic in store.siteSettings.heroTopics" :key="topic">
+                <i class="fa-solid fa-newspaper"></i> {{ topic }}
+              </span>
             </div>
 
             <div style="display:flex; gap: 8px; margin-top: 16px; flex-wrap:wrap;">
@@ -37,7 +37,7 @@
           <div class="section-heading">
             <div style="display:flex; align-items:center; gap:8px;">
               <i class="fa-solid fa-thumbtack" style="color: var(--color-fg-muted);"></i>
-              Artikel Unggulan
+              {{ store.siteSettings.featuredTitle }}
             </div>
             <router-link to="/articles" class="btn btn-invisible btn-sm">
               Lihat semua <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i>
@@ -73,7 +73,7 @@
           <!-- Quick Links Box -->
           <div class="gh-box mb-3">
             <div class="gh-box-header">
-              <span><i class="fa-solid fa-compass me-2" style="color: var(--color-fg-muted);"></i>Navigasi Cepat</span>
+              <span><i class="fa-solid fa-compass me-2" style="color: var(--color-fg-muted);"></i>{{ store.siteSettings.navigationTitle }}</span>
             </div>
             <div class="gh-box-body" style="padding: 0;">
               <ul style="list-style:none; padding: 0; margin:0;">

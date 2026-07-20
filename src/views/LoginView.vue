@@ -110,8 +110,8 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
-import { auth, firebaseIsConfigured, firebaseSetupError, googleProvider } from '../firebase.js';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
+import { auth, firebaseIsConfigured, firebaseSetupError, googleProvider, isEmailAllowed } from '../firebase.js';
 
 const router = useRouter();
 const route = useRoute();
@@ -130,7 +130,12 @@ const loginWithGoogle = async () => {
   errorMsg.value = '';
   try {
     if (!firebaseIsConfigured || !auth) throw new Error(firebaseSetupError);
-    await signInWithPopup(auth, googleProvider);
+    const result = await signInWithPopup(auth, googleProvider);
+    if (!isEmailAllowed(result.user.email)) {
+      await signOut(auth);
+      errorMsg.value = 'Email tidak terdaftar. Hubungi administrator.';
+      return;
+    }
     router.push(getRedirect());
   } catch (error) {
     errorMsg.value = getAuthMessage(error);
@@ -144,10 +149,16 @@ const loginWithEmail = async () => {
   errorMsg.value = '';
   try {
     if (!firebaseIsConfigured || !auth) throw new Error(firebaseSetupError);
+    let userCred;
     if (isRegister.value) {
-      await createUserWithEmailAndPassword(auth, email.value, password.value);
+      userCred = await createUserWithEmailAndPassword(auth, email.value, password.value);
     } else {
-      await signInWithEmailAndPassword(auth, email.value, password.value);
+      userCred = await signInWithEmailAndPassword(auth, email.value, password.value);
+    }
+    if (!isEmailAllowed(userCred.user.email)) {
+      await signOut(auth);
+      errorMsg.value = 'Email tidak terdaftar. Hubungi administrator.';
+      return;
     }
     router.push(getRedirect());
   } catch (error) {

@@ -4,14 +4,14 @@
     <div style="padding: 24px 24px 0;">
       <div class="d-flex align-items-center justify-content-between mb-1">
         <h1 style="font-size: 20px; font-weight: 600; color: var(--color-fg-default);">
-          <i class="fa-solid fa-newspaper me-2" style="color: var(--color-fg-muted);"></i>Artikel
+          <i class="fa-solid fa-newspaper me-2" style="color: var(--color-fg-muted);"></i>{{ store.siteSettings.articlesTitle }}
         </h1>
         <router-link to="/write-article" class="btn btn-primary btn-sm">
           <i class="fa-solid fa-plus"></i> Tulis Artikel
         </router-link>
       </div>
       <p style="font-size: 13px; color: var(--color-fg-muted); margin-bottom: 16px;">
-        Jelajahi tulisan-tulisan seputar akuntansi, teknologi, dan bisnis.
+        {{ store.siteSettings.articlesDescription }}
       </p>
 
       <!-- Category Filter Tabs -->

@@ -152,6 +152,13 @@
               >
                 <i class="fa-solid fa-user"></i> Profil Saya
               </router-link>
+              <router-link
+                to="/admin"
+                class="dropdown-item"
+                @click="dropdownOpen = false"
+              >
+                <i class="fa-solid fa-screwdriver-wrench"></i> Admin
+              </router-link>
               <div class="dropdown-divider"></div>
               <button
                 class="dropdown-item text-danger-item"
@@ -250,7 +257,10 @@ const handleClickOutside = (e) => {
   }
 };
 
-onMounted(() => document.addEventListener("mousedown", handleClickOutside));
+onMounted(() => {
+  document.addEventListener("mousedown", handleClickOutside);
+  store.applyTheme();
+});
 onUnmounted(() =>
   document.removeEventListener("mousedown", handleClickOutside),
 );
