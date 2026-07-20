@@ -134,8 +134,7 @@
             placeholder="https://drive.google.com/...."
           />
           <div class="form-text">
-            Sampul gambar akan diunggah ke ImgBB. File buku gunakan link PDF
-            dari Google Drive.
+            File buku gunakan link PDF dari Google Drive.
           </div>
         </div>
         <div class="book-form-actions">
@@ -218,30 +217,30 @@ const uploadCover = async (event) => {
   const file = event.target.files?.[0];
   if (!file) return;
 
-  if (!import.meta.env.VITE_IMGBB_API_KEY) {
-    alert("API key ImgBB belum dikonfigurasi. Set VITE_IMGBB_API_KEY.");
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+  if (!cloudName || !uploadPreset) {
+    alert("Cloudinary belum dikonfigurasi. Set VITE_CLOUDINARY_CLOUD_NAME dan VITE_CLOUDINARY_UPLOAD_PRESET.");
     return;
   }
 
   const formData = new FormData();
-  formData.append("image", file);
+  formData.append("file", file);
+  formData.append("upload_preset", uploadPreset);
 
   try {
     const response = await fetch(
-      `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_IMGBB_API_KEY}`,
-      {
-        method: "POST",
-        body: formData,
-      },
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      { method: "POST", body: formData },
     );
 
     const data = await response.json();
-    const imgUrl = data?.data?.image?.url || data?.data?.url;
-    if (imgUrl) {
-      book.cover = imgUrl;
+    if (data?.secure_url) {
+      book.cover = data.secure_url;
       book.fileName = book.title || "Buku";
     } else {
-      throw new Error("Gagal mengunggah sampul gambar.");
+      throw new Error(data?.error?.message || "Gagal mengunggah sampul.");
     }
   } catch (error) {
     console.error(error);

@@ -123,10 +123,7 @@
                   <div v-if="uploadError" style="margin-top:8px; font-size:12px; color:var(--color-danger-fg);">
                     <i class="fa-solid fa-circle-exclamation"></i> {{ uploadError }}
                   </div>
-                  <div class="form-text">
-                    <i class="fa-solid fa-circle-info"></i> Gambar akan diunggah
-                    ke ImgBB.
-                  </div>
+
                 </div>
               </div>
 
@@ -382,33 +379,33 @@ const uploadArticleImage = async (event) => {
   if (!file) return;
   uploadError.value = "";
 
-  if (!import.meta.env.VITE_IMGBB_API_KEY) {
-    uploadError.value = "API key ImgBB belum dikonfigurasi. Set VITE_IMGBB_API_KEY.";
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+  if (!cloudName || !uploadPreset) {
+    uploadError.value = "Cloudinary belum dikonfigurasi. Set VITE_CLOUDINARY_CLOUD_NAME dan VITE_CLOUDINARY_UPLOAD_PRESET.";
     return;
   }
 
   const formData = new FormData();
-  formData.append("image", file);
+  formData.append("file", file);
+  formData.append("upload_preset", uploadPreset);
 
   try {
     const response = await fetch(
-      `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_IMGBB_API_KEY}`,
-      {
-        method: "POST",
-        body: formData,
-      },
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      { method: "POST", body: formData },
     );
 
     const data = await response.json();
-    const imgUrl = data?.data?.image?.url || data?.data?.url;
-    if (imgUrl) {
-      newArticle.value.image = imgUrl;
+    if (data?.secure_url) {
+      newArticle.value.image = data.secure_url;
     } else {
-      throw new Error("Gagal mengunggah gambar artikel.");
+      throw new Error(data?.error?.message || "Gagal mengunggah gambar.");
     }
   } catch (error) {
     console.error(error);
-    uploadError.value = "Gagal mengunggah gambar. Periksa API key ImgBB.";
+    uploadError.value = "Gagal mengunggah gambar. Periksa konfigurasi Cloudinary.";
   }
 };
 
